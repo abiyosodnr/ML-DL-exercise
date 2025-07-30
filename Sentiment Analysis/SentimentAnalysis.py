@@ -1,5 +1,3 @@
-
-
 import streamlit as st
 import pandas as pd
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
@@ -29,41 +27,38 @@ def load_indobert():
     
     return tokenizer, model, device
 
-# TODO
 LABEL_MAPPING = {
     0: 'negatif',  
     1: 'netral',  
     2: 'positif'   
 }
 
-# TODO 3: Fungsi untuk analisis sentimen
+# Fungsi untuk analisis sentimen
 def analyze_sentiment(texts):
     tokenizer, model, device = load_indobert()
     results = []
     
     for text in texts:
-        # LENGKAPI KODE DI SINI
-        # 1. Tokenize text (max_length=128)
+        # Tokenize text
         inputs = tokenizer(
             text, 
             return_tensors="pt", 
             truncation=True,
             padding=True,
-            max_length=128  # Berapa max length untuk tweet?
+            max_length=128  
         )
         
-        # 2. Pindahkan ke device yang tepat
+        # Pindahkan ke device yang tepat
         inputs = {k: v.to(device) for k, v in inputs.items()}
         
-        # 3. Prediksi sentimen
+        # Prediksi sentimen
         with torch.no_grad():
             outputs = model(**inputs)
             probs = F.softmax(outputs.logits, dim=-1)
             predicted_label = torch.argmax(probs, dim=-1).item()
             confidence = probs[0][predicted_label].item()
         
-        # 4. Map label ke sentimen
-        sentiment = LABEL_MAPPING[predicted_label]  # Gunakan predicted_label
+        sentiment = LABEL_MAPPING[predicted_label] 
         
         results.append({
             'text': text,
@@ -76,13 +71,11 @@ def analyze_sentiment(texts):
     
     return pd.DataFrame(results)
 
-# TODO 4: Fungsi evaluasi dengan OLLAMA (evaluasi keseluruhan)
+# Fungsi evaluasi dengan OLLAMA (evaluasi keseluruhan)
 def evaluate_with_ollama(df_results, model="llama3.2"):
-    # Hitung statistik dataset
     total_tweets = len(df_results)
     sentiment_counts = df_results['sentiment'].value_counts()
     
-    # LENGKAPI TEMPLATE PROMPT
     prompt_template = f"""
     Evaluasi hasil analisis sentimen Twitter Indonesia:
     
@@ -133,14 +126,13 @@ def read_csv_flexible(uploaded_file):
     return pd.DataFrame()
 
 
+
 # Interface Streamlit
 tab1, tab2, tab3 = st.tabs(["📝 Data Input", "🔍 Analisis", "📊 Evaluasi"])
 
 with tab1:
     st.header("Input Data Tweet")
     
-    # TODO 5: Buat dataframe dengan contoh tweet Indonesia
-    # Minimal 10 tweet dengan berbagai sentimen
     sample_data = pd.DataFrame({
     'text': [
         "Baru coba sabun wajah ini, wanginya enak banget dan bikin kulit halus!",  # positif
@@ -158,7 +150,6 @@ with tab1:
 
 
     
-    # Pilihan input data
     data_source = st.radio("Sumber data:", ["Sample Data", "Upload CSV"])
     
     if data_source == "Sample Data":
@@ -167,7 +158,6 @@ with tab1:
     else:
         uploaded_file = st.file_uploader("Upload CSV file", type=['csv'])
         if uploaded_file:
-            # TODO: Implementasi pembacaan CSV yang robust
             try:
                 df = pd.read_csv(uploaded_file)
                 st.success("File berhasil dibaca!")
@@ -181,8 +171,7 @@ with tab1:
     if not df.empty:
         st.dataframe(df)
         st.info(f"Total tweets: {len(df)}")
-    
-    # Simpan ke session state
+
     st.session_state['data'] = df
 
 with tab2:
@@ -191,18 +180,14 @@ with tab2:
     if 'data' in st.session_state:
         df = st.session_state['data']
         
-        # TODO 6: Implementasi tombol analisis
+        # Implementasi tombol analisis
         if st.button("Analisis Sentimen", type="primary"):
             with st.spinner("Menganalisis tweet..."):
-                # LENGKAPI KODE DI SINI
-                results = analyze_sentiment(df['Text Tweet'].tolist()) # Panggil dengan parameter yang tepat
+                results = analyze_sentiment(df['Text Tweet'].tolist())
                 st.session_state['results'] = results
                 
-                # Tampilkan hasil
                 st.dataframe(results)
                 
-                # TODO 7: Tambahkan visualisasi
-                # Hint: Gunakan st.bar_chart untuk distribusi sentimen
                 col1, col2 = st.columns(2)
                 
                 with col1:
@@ -231,18 +216,15 @@ with tab3:
             index=0
         )
         
-        # TODO 8: Implementasi evaluasi keseluruhan
+        # Evaluasi keseluruhan
         if st.button("Evaluasi Dataset"):
             with st.spinner("Evaluasi dengan OLLAMA..."):
-                # LENGKAPI KODE DI SINI
-                evaluation = evaluate_with_ollama(results, ollama_model) # Parameter yang tepat
+                evaluation = evaluate_with_ollama(results, ollama_model)
                 
                 st.subheader("Hasil Evaluasi:")
                 st.text_area("", evaluation, height=300)
         
-        # TODO 9: Tambahkan fitur download hasil
         if st.button("Download Hasil CSV"):
-            # LENGKAPI KODE DI SINI
             csv = results.to_csv(index=False)
             st.download_button(
                 label="Download",
@@ -251,7 +233,6 @@ with tab3:
                 mime="text/csv"
             )
 
-# TODO 10: Lengkapi sidebar dengan informasi
 with st.sidebar:
     st.header("📚 Panduan Mini Project")
     st.write("""
@@ -278,7 +259,4 @@ with st.sidebar:
     - Perhatikan confidence score
     """)
     
-    # TODO 11: Tambahkan status check
     st.header("🔧 Status")
-    # Cek apakah model berhasil di-load
-    # Cek apakah GPU tersedia
